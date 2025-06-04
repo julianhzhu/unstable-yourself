@@ -2,7 +2,7 @@
 
 **Convert all your Solana tokens to USDUC (unstable coin) in one click.**
 
-[Live Demo](https://unstable.me/) &nbsp;|&nbsp; [Check the code yourself](https://github.com/julianhzhu/unstable-me)
+[Live Demo](https://unstableyourself.com/) &nbsp;|&nbsp; [Check the code yourself](https://github.com/julianhzhu/unstable-me)
 
 ---
 

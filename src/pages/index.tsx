@@ -401,7 +401,7 @@ export default function Home() {
             style={{ boxShadow: "0 8px 40px 0 rgba(45,94,255,0.10)" }}
           >
             <Image
-              src="https://raw.githubusercontent.com/julianhzhu/unstable-me/main/usduc-logo.png"
+              src="/usduc-logo.png"
               alt="USDUC Logo"
               width={96}
               height={96}

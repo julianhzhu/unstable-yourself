@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
       "gateway.irys.xyz",
       "powerball.tech",
       "i.degencdn.com",
+      "i.pinimg.com",
     ],
     remotePatterns: [
       {

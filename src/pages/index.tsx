@@ -79,7 +79,9 @@ async function fetchTokenPrices(
   const { data } = await axios.get(url);
   const prices: Record<string, number> = {};
   for (const mint in data.data) {
-    prices[mint] = parseFloat(data.data[mint].price);
+    if (data.data[mint] && data.data[mint].price != null) {
+      prices[mint] = parseFloat(data.data[mint].price);
+    }
   }
   return prices;
 }
@@ -207,42 +209,28 @@ export default function Home() {
           amount: (token as TokenInfo).amount ?? "",
           ...(token as Omit<TokenInfo, "mint" | "uiAmount" | "amount">),
         }));
-      // Batch SHIELD API calls (max 10 mints per call)
-      function chunkArray<T>(arr: T[], size: number): T[][] {
-        const res: T[][] = [];
-        for (let i = 0; i < arr.length; i += size) {
-          res.push(arr.slice(i, i + size));
-        }
-        return res;
-      }
+      setTokens(filtered);
       const mints = filtered.map((t) => getMintAddress(t.mint));
-      const mintChunks = chunkArray(mints, 10);
-      let combinedWarnings: Record<string, any[]> = {};
-      for (const chunk of mintChunks) {
-        const shieldUrl = `https://lite-api.jup.ag/ultra/v1/shield?mints=${chunk.join(
-          ","
-        )}`;
-        const shieldRes = await fetch(shieldUrl).then((res) => res.json());
-        combinedWarnings = { ...combinedWarnings, ...shieldRes.warnings };
+      let priceMap: Record<string, number> = {};
+      try {
+        priceMap = await fetchTokenPrices(mints);
+      } catch (e) {
+        console.error("[DEBUG] Error fetching priceMap:", e);
       }
-      // Filter tokens using original mint for SHIELD lookup
-      const safeTokens = filtered.filter((t) => {
-        const mint = t.mint;
-        const warnings: any[] = combinedWarnings[mint] || [];
-        const isScam = warnings.some((w: any) => w.type === "NOT_SELLABLE");
-        return !isScam;
-      });
-      setTokens(safeTokens);
-      const safeMints = safeTokens.map((t) => getMintAddress(t.mint));
-      const priceMap = await fetchTokenPrices(safeMints);
       setPrices(priceMap);
-      const metaMap = await fetchTokenMetadatas(safeMints);
+      const metaMap = await fetchTokenMetadatas(mints);
       setTokenMetas(metaMap);
-      // Filter out tokens with less than 1 cent total value (balance * price)
-      const minValueTokens = safeTokens.filter((t) => {
+      // Filter out tokens with less than 1 cent total value (balance * price), but keep tokens with unknown price
+      const minValueTokens = filtered.filter((t) => {
         const mint = getMintAddress(t.mint);
-        const price = priceMap[mint] || 0;
-        const totalValue = (t.uiAmount || 0) * price;
+        const price = priceMap[mint];
+        const totalValue = (t.uiAmount || 0) * (price || 0);
+        if (price === undefined || price === 0) {
+          return true;
+        }
+        if (totalValue < 0.01) {
+          return false;
+        }
         return totalValue >= 0.01;
       });
       setTokens(minValueTokens);
@@ -547,12 +535,13 @@ export default function Home() {
                               className="w-5 h-5 accent-blue-600 rounded-md border border-blue-200"
                             />
                             {meta && meta.logoURI ? (
-                              <Image
+                              <img
                                 src={meta.logoURI}
                                 alt={meta.symbol || token.mint}
                                 width={28}
                                 height={28}
                                 className="w-7 h-7 rounded-full border border-gray-200 bg-white flex-shrink-0"
+                                style={{ objectFit: "cover" }}
                               />
                             ) : (
                               <div className="w-7 h-7 rounded-full bg-gray-200 flex-shrink-0" />

@@ -207,17 +207,29 @@ export default function Home() {
           amount: (token as TokenInfo).amount ?? "",
           ...(token as Omit<TokenInfo, "mint" | "uiAmount" | "amount">),
         }));
-      setTokens(filtered);
       const mints = filtered.map((t) => getMintAddress(t.mint));
-      const priceMap = await fetchTokenPrices(mints);
+      // --- Jupiter SHIELD API integration ---
+      const shieldRes = await fetch(
+        `https://lite-api.jup.ag/ultra/v1/shield?mints=${mints.join(",")}`
+      ).then((res) => res.json());
+      const safeMints = mints.filter((mint) => {
+        const warnings = shieldRes.warnings[mint] || [];
+        return !warnings.some(
+          (w: any) => w.type === "NOT_SELLABLE" || w.severity === "critical"
+        );
+      });
+      const safeTokens = filtered.filter((t) =>
+        safeMints.includes(getMintAddress(t.mint))
+      );
+      setTokens(safeTokens);
+      const priceMap = await fetchTokenPrices(safeMints);
       setPrices(priceMap);
-      const metaMap = await fetchTokenMetadatas(mints);
+      const metaMap = await fetchTokenMetadatas(safeMints);
       setTokenMetas(metaMap);
+      // Default: no tokens selected
       const sel: Record<string, boolean> = {};
-      for (const t of filtered) {
-        const mintAddr = getMintAddress(t.mint);
-        sel[t.mint] =
-          mintAddr !== getMintAddress(USDUC_MINT) && mintAddr !== WSOL_MINT;
+      for (const t of safeTokens) {
+        sel[t.mint] = false;
       }
       setSelected(sel);
     } catch {

@@ -209,22 +209,53 @@ export default function Home() {
           amount: (token as TokenInfo).amount ?? "",
           ...(token as Omit<TokenInfo, "mint" | "uiAmount" | "amount">),
         }));
+
+      // Batch SHIELD API calls (max 10 mints per call)
+      function chunkArray<T>(arr: T[], size: number): T[][] {
+        const res: T[][] = [];
+        for (let i = 0; i < arr.length; i += size) {
+          res.push(arr.slice(i, i + size));
+        }
+        return res;
+      }
+
       setTokens(filtered);
       const mints = filtered.map((t) => getMintAddress(t.mint));
+      const mintChunks = chunkArray(mints, 10);
+      let combinedWarnings: Record<string, any[]> = {};
+      for (const chunk of mintChunks) {
+        const shieldUrl = `https://lite-api.jup.ag/ultra/v1/shield?mints=${chunk.join(
+          ","
+        )}`;
+        const shieldRes = await fetch(shieldUrl).then((res) => res.json());
+        combinedWarnings = { ...combinedWarnings, ...shieldRes.warnings };
+      }
+
+      // Filter tokens using original mint for SHIELD lookup
+      const safeTokens = filtered.filter((t) => {
+        const mint = t.mint;
+        const warnings: any[] = combinedWarnings[mint] || [];
+        const isScam = warnings.some((w: any) => w.type === "NOT_SELLABLE");
+        return !isScam;
+      });
+
+      setTokens(safeTokens);
+      const safeMints = safeTokens.map((t) => getMintAddress(t.mint));
       let priceMap: Record<string, number> = {};
       try {
-        priceMap = await fetchTokenPrices(mints);
+        priceMap = await fetchTokenPrices(safeMints);
       } catch (e) {
         console.error("[DEBUG] Error fetching priceMap:", e);
       }
       setPrices(priceMap);
-      const metaMap = await fetchTokenMetadatas(mints);
+      const metaMap = await fetchTokenMetadatas(safeMints);
       setTokenMetas(metaMap);
-      // Filter out tokens with less than 1 cent total value (balance * price), but keep tokens with unknown price
-      const minValueTokens = filtered.filter((t) => {
+
+      // Filter out tokens with less than 1 cent total value (balance * price)
+      const minValueTokens = safeTokens.filter((t) => {
         const mint = getMintAddress(t.mint);
-        const price = priceMap[mint];
-        const totalValue = (t.uiAmount || 0) * (price || 0);
+        const price = priceMap[mint] || 0;
+        const totalValue = (t.uiAmount || 0) * price;
         if (price === undefined || price === 0) {
           return true;
         }

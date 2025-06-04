@@ -208,20 +208,19 @@ export default function Home() {
           ...(token as Omit<TokenInfo, "mint" | "uiAmount" | "amount">),
         }));
       const mints = filtered.map((t) => getMintAddress(t.mint));
-      // --- Jupiter SHIELD API integration ---
       const shieldRes = await fetch(
         `https://lite-api.jup.ag/ultra/v1/shield?mints=${mints.join(",")}`
       ).then((res) => res.json());
-      const safeMints = mints.filter((mint) => {
+      // Filter tokens using getMintAddress for both SHIELD and filter
+      const safeTokens = filtered.filter((t) => {
+        const mint = getMintAddress(t.mint);
         const warnings = shieldRes.warnings[mint] || [];
         return !warnings.some(
           (w: any) => w.type === "NOT_SELLABLE" || w.severity === "critical"
         );
       });
-      const safeTokens = filtered.filter((t) =>
-        safeMints.includes(getMintAddress(t.mint))
-      );
       setTokens(safeTokens);
+      const safeMints = safeTokens.map((t) => getMintAddress(t.mint));
       const priceMap = await fetchTokenPrices(safeMints);
       setPrices(priceMap);
       const metaMap = await fetchTokenMetadatas(safeMints);

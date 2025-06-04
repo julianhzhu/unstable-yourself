@@ -94,7 +94,7 @@ async function fetchTokenMetadatas(
         const url = `https://lite-api.jup.ag/tokens/v1/token/${mint}`;
         const { data } = await axios.get(url);
         meta[mint] = data;
-      } catch {
+      } catch (e) {
         meta[mint] = null;
       }
     })
@@ -207,17 +207,32 @@ export default function Home() {
           amount: (token as TokenInfo).amount ?? "",
           ...(token as Omit<TokenInfo, "mint" | "uiAmount" | "amount">),
         }));
+      // Batch SHIELD API calls (max 10 mints per call)
+      function chunkArray<T>(arr: T[], size: number): T[][] {
+        const res: T[][] = [];
+        for (let i = 0; i < arr.length; i += size) {
+          res.push(arr.slice(i, i + size));
+        }
+        return res;
+      }
       const mints = filtered.map((t) => getMintAddress(t.mint));
-      const shieldRes = await fetch(
-        `https://lite-api.jup.ag/ultra/v1/shield?mints=${mints.join(",")}`
-      ).then((res) => res.json());
-      // Filter tokens using getMintAddress for both SHIELD and filter
+      const mintChunks = chunkArray(mints, 10);
+      let combinedWarnings: Record<string, any[]> = {};
+      for (const chunk of mintChunks) {
+        const shieldUrl = `https://lite-api.jup.ag/ultra/v1/shield?mints=${chunk.join(
+          ","
+        )}`;
+        const shieldRes = await fetch(shieldUrl).then((res) => res.json());
+        combinedWarnings = { ...combinedWarnings, ...shieldRes.warnings };
+      }
+      // Filter tokens using original mint for SHIELD lookup
       const safeTokens = filtered.filter((t) => {
-        const mint = getMintAddress(t.mint);
-        const warnings = shieldRes.warnings[mint] || [];
-        return !warnings.some(
+        const mint = t.mint;
+        const warnings: any[] = combinedWarnings[mint] || [];
+        const isScam = warnings.some(
           (w: any) => w.type === "NOT_SELLABLE" || w.severity === "critical"
         );
+        return !isScam;
       });
       setTokens(safeTokens);
       const safeMints = safeTokens.map((t) => getMintAddress(t.mint));
@@ -231,7 +246,7 @@ export default function Home() {
         sel[t.mint] = false;
       }
       setSelected(sel);
-    } catch {
+    } catch (e) {
       setTokens([]);
       setPrices({});
       setSelected({});
@@ -249,7 +264,6 @@ export default function Home() {
     return () => {
       clearInterval(interval);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [publicKey]);
 
   const handleRefresh = async () => {
@@ -305,6 +319,7 @@ export default function Home() {
         setSwapStatus("No tokens swapped.");
       }
     } catch (e: unknown) {
+      console.log("[handleConvertAll] swap error:", e);
       setSwapStatus(
         "Swap failed: " + ((e as Error)?.message || "Unknown error")
       );
@@ -325,6 +340,10 @@ export default function Home() {
     page * TOKENS_PER_PAGE,
     (page + 1) * TOKENS_PER_PAGE
   );
+  // If page is out of range after filtering, reset to 0
+  if (page > 0 && page >= totalPages) {
+    setPage(0);
+  }
 
   // Selected tokens count and total value
   const selectedTokens = sortedTokens.filter((t) => selected[t.mint]);

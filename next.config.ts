@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
       "i.imgur.com",
       "arweave.net",
       "static.jup.ag",
+      "gateway.irys.xyz",
+      "powerball.tech",
+      "i.degencdn.com",
     ],
     remotePatterns: [
       {

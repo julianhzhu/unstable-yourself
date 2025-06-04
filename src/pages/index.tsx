@@ -346,7 +346,7 @@ export default function Home() {
       // Build summary HTML
       let summaryHtml = `<div><b>Swap Summary:</b><ul style='margin:0;padding-left:1.2em;'>`;
       for (const r of results) {
-        let color =
+        const color =
           r.status === "success"
             ? "#059669"
             : r.status === "failed"

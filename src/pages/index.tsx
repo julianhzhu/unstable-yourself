@@ -254,14 +254,12 @@ export default function Home() {
       // Filter out tokens with less than 1 cent total value (balance * price)
       const minValueTokens = safeTokens.filter((t) => {
         const mint = getMintAddress(t.mint);
-        const price = priceMap[mint] || 0;
-        const totalValue = (t.uiAmount || 0) * price;
+        const price = priceMap[mint];
+        // Skip tokens with unknown price
         if (price === undefined || price === 0) {
-          return true;
-        }
-        if (totalValue < 0.01) {
           return false;
         }
+        const totalValue = (t.uiAmount || 0) * price;
         return totalValue >= 0.01;
       });
       setTokens(minValueTokens);

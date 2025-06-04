@@ -229,9 +229,7 @@ export default function Home() {
       const safeTokens = filtered.filter((t) => {
         const mint = t.mint;
         const warnings: any[] = combinedWarnings[mint] || [];
-        const isScam = warnings.some(
-          (w: any) => w.type === "NOT_SELLABLE" || w.severity === "critical"
-        );
+        const isScam = warnings.some((w: any) => w.type === "NOT_SELLABLE");
         return !isScam;
       });
       setTokens(safeTokens);

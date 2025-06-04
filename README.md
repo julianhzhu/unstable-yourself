@@ -1,6 +1,6 @@
 # Unstable Yourself
 
-<img src="/usduc-logo.png" alt="USDUC Logo" width="96" height="96" style="border-radius: 50%; margin-bottom: 1em;" />
+<img src="https://raw.githubusercontent.com/julianhzhu/unstable-me/main/usduc-logo.png" alt="USDUC Logo" width="96" height="96" style="border-radius: 50%; margin-bottom: 1em;" />
 
 **Convert all your Solana tokens to USDUC (the first ever unstable coin) in one click.**
 

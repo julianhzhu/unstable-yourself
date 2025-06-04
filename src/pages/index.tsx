@@ -4,6 +4,7 @@ import { PublicKey, VersionedTransaction } from "@solana/web3.js";
 import axios from "axios";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 // USDUC Mint
 const USDUC_MINT = "CB9dDufT3ZuQXqqSfa1c5kY935TEreyBw9XJXxHKpump";
@@ -29,6 +30,20 @@ const UNSTABLE_TAGLINES = [
   "Sleep poor, wake up rich (or not)",
 ];
 
+interface TokenMeta {
+  logoURI?: string;
+  symbol?: string;
+  name?: string;
+  [key: string]: unknown;
+}
+
+interface TokenInfo {
+  mint: string;
+  uiAmount: number;
+  amount: string;
+  [key: string]: unknown;
+}
+
 function WalletButtonWrapper() {
   return (
     <WalletMultiButtonDynamic
@@ -50,8 +65,7 @@ function WalletButtonWrapper() {
   );
 }
 
-function getMintAddress(mint: string) {
-  // If the token is SOL, return the wrapped SOL mint address
+function getMintAddress(mint: string): string {
   if (mint === "SOL") return WSOL_MINT;
   return mint;
 }
@@ -63,7 +77,6 @@ async function fetchTokenPrices(
   const ids = mintAddresses.join(",");
   const url = `https://lite-api.jup.ag/price/v2?ids=${ids}`;
   const { data } = await axios.get(url);
-  // data.data is a map of mint -> { price }
   const prices: Record<string, number> = {};
   for (const mint in data.data) {
     prices[mint] = parseFloat(data.data[mint].price);
@@ -73,15 +86,15 @@ async function fetchTokenPrices(
 
 async function fetchTokenMetadatas(
   mintAddresses: string[]
-): Promise<Record<string, any>> {
-  const meta: Record<string, any> = {};
+): Promise<Record<string, TokenMeta | null>> {
+  const meta: Record<string, TokenMeta | null> = {};
   await Promise.all(
     mintAddresses.map(async (mint) => {
       try {
         const url = `https://lite-api.jup.ag/tokens/v1/token/${mint}`;
         const { data } = await axios.get(url);
         meta[mint] = data;
-      } catch (e) {
+      } catch {
         meta[mint] = null;
       }
     })
@@ -96,11 +109,10 @@ async function swapTokenToUSDUC({
   signTransaction,
 }: {
   fromMint: string;
-  amount: string; // in raw token units (not UI amount)
+  amount: string;
   publicKey: PublicKey;
   signTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction>;
 }) {
-  // Always use mint addresses for inputMint/outputMint
   const inputMint = getMintAddress(fromMint);
   const outputMint = getMintAddress(USDUC_MINT);
   const params = new URLSearchParams({
@@ -114,29 +126,34 @@ async function swapTokenToUSDUC({
     orderRes = await axios.get(
       `https://lite-api.jup.ag/ultra/v1/order?${params.toString()}`
     );
-  } catch (err: any) {
-    // If the API returns a 400/500, show the error message
-    if (err.response && err.response.data) {
+  } catch (err: unknown) {
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "response" in err &&
+      (err as any).response?.data
+    ) {
       throw new Error(
-        `Jupiter API error: ${JSON.stringify(err.response.data, null, 2)}`
+        `Jupiter API error: ${JSON.stringify(
+          (err as any).response.data,
+          null,
+          2
+        )}`
       );
     } else {
       throw new Error("Unknown error from Jupiter API");
     }
   }
   const order = orderRes.data;
-  // If the API returns an error or message field, show it
   if (order.error || order.message) {
     throw new Error(`Jupiter API error: ${order.error || order.message}`);
   }
-  // If transaction is present, it's an aggregator swap (needs signing/execution)
   if (order.transaction && order.requestId) {
     const tx = VersionedTransaction.deserialize(
       Buffer.from(order.transaction, "base64")
     );
     const signedTx = await signTransaction(tx);
     const signedTxBase64 = Buffer.from(signedTx.serialize()).toString("base64");
-    // Execute Order
     const execRes = await axios.post(
       "https://lite-api.jup.ag/ultra/v1/execute",
       {
@@ -146,10 +163,8 @@ async function swapTokenToUSDUC({
     );
     return execRes.data;
   } else if (order.swapType === "rfq") {
-    // RFQ swap: no transaction, just return the order response
     return order;
   } else {
-    // Show the full response for debugging
     throw new Error(
       `Unknown order response from Jupiter Ultra API: ${JSON.stringify(
         order,
@@ -164,7 +179,7 @@ const TOKENS_PER_PAGE = 10;
 
 export default function Home() {
   const { publicKey, connected, signTransaction } = useWallet();
-  const [tokens, setTokens] = useState<any[]>([]);
+  const [tokens, setTokens] = useState<TokenInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [swapping, setSwapping] = useState(false);
   const [swapStatus, setSwapStatus] = useState<string | null>(null);
@@ -172,7 +187,9 @@ export default function Home() {
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(0);
-  const [tokenMetas, setTokenMetas] = useState<Record<string, any>>({});
+  const [tokenMetas, setTokenMetas] = useState<
+    Record<string, TokenMeta | null>
+  >({});
   const [taglineIdx, setTaglineIdx] = useState(0);
 
   // Fetch balances and prices
@@ -182,19 +199,20 @@ export default function Home() {
     try {
       const url = `https://lite-api.jup.ag/ultra/v1/balances/${publicKey.toBase58()}`;
       const { data } = await axios.get(url);
-      // Filter out tokens with zero balance and convert to array
-      const filtered = Object.entries(data)
-        .filter(([mint, token]: any) => Number(token.uiAmount) > 0)
-        .map(([mint, token]: any) => ({ mint, ...token }));
+      const filtered: TokenInfo[] = Object.entries(data)
+        .filter(([, token]) => Number((token as TokenInfo).uiAmount) > 0)
+        .map(([mint, token]) => ({
+          mint,
+          uiAmount: (token as TokenInfo).uiAmount ?? 0,
+          amount: (token as TokenInfo).amount ?? "",
+          ...(token as Omit<TokenInfo, "mint" | "uiAmount" | "amount">),
+        }));
       setTokens(filtered);
-      // Fetch prices for all tokens
       const mints = filtered.map((t) => getMintAddress(t.mint));
       const priceMap = await fetchTokenPrices(mints);
       setPrices(priceMap);
-      // Fetch token metadata for all tokens
       const metaMap = await fetchTokenMetadatas(mints);
       setTokenMetas(metaMap);
-      // Select all by default (except USDUC and SOL)
       const sel: Record<string, boolean> = {};
       for (const t of filtered) {
         const mintAddr = getMintAddress(t.mint);
@@ -202,7 +220,7 @@ export default function Home() {
           mintAddr !== getMintAddress(USDUC_MINT) && mintAddr !== WSOL_MINT;
       }
       setSelected(sel);
-    } catch (e) {
+    } catch {
       setTokens([]);
       setPrices({});
       setSelected({});
@@ -238,8 +256,7 @@ export default function Home() {
     setSwapStatus("Starting swaps...");
     try {
       let swapped = 0;
-      // Only swap selected tokens
-      const tokensToSwap = tokens.filter((token: any) => selected[token.mint]);
+      const tokensToSwap = tokens.filter((token) => selected[token.mint]);
       for (const token of tokensToSwap) {
         setSwapStatus(`Swapping ${token.uiAmount} of ${token.mint}...`);
         const result = await swapTokenToUSDUC({
@@ -251,7 +268,7 @@ export default function Home() {
         if (result.status === "Success") {
           swapped++;
           setSwapStatus(
-            `Swap success! <a href=\"https://solscan.io/tx/${result.signature}\" target=\"_blank\" rel=\"noopener noreferrer\">View on Solscan</a>`
+            `Swap success! <a href="https://solscan.io/tx/${result.signature}" target="_blank" rel="noopener noreferrer">View on Solscan</a>`
           );
         } else if (result.swapType === "rfq") {
           setSwapStatus(
@@ -272,13 +289,14 @@ export default function Home() {
       }
       if (swapped > 0) {
         setSwapStatus("All selected tokens swapped to USDUC!");
-        // Refresh balances after swap
         await fetchBalancesAndPrices();
       } else {
         setSwapStatus("No tokens swapped.");
       }
-    } catch (e: any) {
-      setSwapStatus("Swap failed: " + (e?.message || "Unknown error"));
+    } catch (e: unknown) {
+      setSwapStatus(
+        "Swap failed: " + ((e as Error)?.message || "Unknown error")
+      );
     }
     setSwapping(false);
   };
@@ -382,11 +400,14 @@ export default function Home() {
             className="mt-16 w-full max-w-md bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-10 border border-blue-100 flex flex-col items-center gap-8 text-center"
             style={{ boxShadow: "0 8px 40px 0 rgba(45,94,255,0.10)" }}
           >
-            <img
-              src="/usduc-logo.png"
+            <Image
+              src="https://raw.githubusercontent.com/julianhzhu/unstable-me/main/usduc-logo.png"
               alt="USDUC Logo"
+              width={96}
+              height={96}
               className="w-24 h-24 rounded-full shadow-md mb-2 border-4 border-white unstable-logo"
               style={{ margin: "0 auto", background: "#2D5EFF" }}
+              priority
             />
             <h2 className="text-3xl font-extrabold text-blue-800 tracking-tight mb-2 font-sans">
               Welcome to Unstable Yourself
@@ -399,7 +420,7 @@ export default function Home() {
         ) : (
           <div className="mt-4 w-full max-w-md bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-blue-100 flex flex-col gap-2">
             <div className="mb-2 font-mono text-xs sm:text-sm text-blue-700 truncate">
-              Wallet: {publicKey.toBase58()}
+              Wallet: {publicKey?.toBase58()}
             </div>
             <div className="mb-4">
               <h2 className="font-bold mb-2 text-blue-800 text-lg sm:text-xl">
@@ -413,7 +434,7 @@ export default function Home() {
                     {paginatedTokens.length === 0 && (
                       <li>No SPL tokens found.</li>
                     )}
-                    {paginatedTokens.map((token: any) => {
+                    {paginatedTokens.map((token) => {
                       const mintAddr = getMintAddress(token.mint);
                       const price = prices[mintAddr] || 0;
                       const value = price * (token.uiAmount || 0);
@@ -432,9 +453,11 @@ export default function Home() {
                               className="w-5 h-5 accent-blue-600 rounded-md border border-blue-200"
                             />
                             {meta && meta.logoURI ? (
-                              <img
+                              <Image
                                 src={meta.logoURI}
                                 alt={meta.symbol || token.mint}
+                                width={28}
+                                height={28}
                                 className="w-7 h-7 rounded-full border border-gray-200 bg-white flex-shrink-0"
                               />
                             ) : (

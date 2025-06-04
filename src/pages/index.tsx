@@ -1,5 +1,4 @@
 import { useWallet } from "@solana/wallet-adapter-react";
-// import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { PublicKey, VersionedTransaction } from "@solana/web3.js";
 import axios from "axios";
 import dynamic from "next/dynamic";

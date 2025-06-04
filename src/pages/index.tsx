@@ -240,9 +240,17 @@ export default function Home() {
       setPrices(priceMap);
       const metaMap = await fetchTokenMetadatas(safeMints);
       setTokenMetas(metaMap);
+      // Filter out tokens with less than 1 cent total value (balance * price)
+      const minValueTokens = safeTokens.filter((t) => {
+        const mint = getMintAddress(t.mint);
+        const price = priceMap[mint] || 0;
+        const totalValue = (t.uiAmount || 0) * price;
+        return totalValue >= 0.01;
+      });
+      setTokens(minValueTokens);
       // Default: no tokens selected
       const sel: Record<string, boolean> = {};
-      for (const t of safeTokens) {
+      for (const t of minValueTokens) {
         sel[t.mint] = false;
       }
       setSelected(sel);

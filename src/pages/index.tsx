@@ -5,6 +5,7 @@ import axios from "axios";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { FiRefreshCw } from "react-icons/fi";
 
 // USDUC Mint
 const USDUC_MINT = "CB9dDufT3ZuQXqqSfa1c5kY935TEreyBw9XJXxHKpump";
@@ -419,8 +420,25 @@ export default function Home() {
           </div>
         ) : (
           <div className="mt-4 w-full max-w-md bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-blue-100 flex flex-col gap-2">
-            <div className="mb-2 font-mono text-xs sm:text-sm text-blue-700 truncate">
-              Wallet: {publicKey?.toBase58()}
+            <div className="mb-2 flex items-center gap-2 font-mono text-xs sm:text-sm text-blue-700">
+              <span
+                className="truncate flex-1 min-w-0"
+                title={publicKey?.toBase58()}
+              >
+                Wallet: {publicKey?.toBase58()}
+              </span>
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing || loading}
+                aria-label="Refresh balances"
+                className="p-1 rounded-full hover:bg-blue-100 transition disabled:opacity-50 flex-shrink-0"
+              >
+                <FiRefreshCw
+                  className={`w-5 h-5 ${
+                    refreshing || loading ? "animate-spin" : ""
+                  } text-blue-500`}
+                />
+              </button>
             </div>
             <div className="mb-4">
               <h2 className="font-bold mb-2 text-blue-800 text-lg sm:text-xl">

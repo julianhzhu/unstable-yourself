@@ -4,7 +4,7 @@
 
 **Convert all your Solana tokens to USDUC (the first ever unstable coin) in one click.**
 
-[Live Demo](https://unstable-me.vercel.app/) &nbsp;|&nbsp; [Check the code yourself](https://github.com/julianhzhu/unstable-me)
+[Live Demo](https://unstable.me/) &nbsp;|&nbsp; [Check the code yourself](https://github.com/julianhzhu/unstable-me)
 
 ---
 
@@ -44,7 +44,7 @@
 - [Tailwind CSS](https://tailwindcss.com/)
 - [shadcn/ui](https://ui.shadcn.com/)
 - [Solana Wallet Adapter](https://github.com/solana-labs/wallet-adapter)
-- [Jupiter API](https://station.jup.ag/docs)
+- [Jupiter API](https://dev.jup.ag/)
 
 ---
 

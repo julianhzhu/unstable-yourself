@@ -288,44 +288,85 @@ export default function Home() {
     try {
       let swapped = 0;
       const tokensToSwap = tokens.filter((token) => selected[token.mint]);
+      const results: {
+        mint: string;
+        uiAmount: number;
+        status: string;
+        message: string;
+        signature?: string;
+      }[] = [];
       for (const token of tokensToSwap) {
         setSwapStatus(`Swapping ${token.uiAmount} of ${token.mint}...`);
-        const result = await swapTokenToUSDUC({
-          fromMint: token.mint,
-          amount: token.amount,
-          publicKey,
-          signTransaction,
-        });
-        if (result.status === "Success") {
-          swapped++;
-          setSwapStatus(
-            `Swap success! <a href="https://solscan.io/tx/${result.signature}" target="_blank" rel="noopener noreferrer">View on Solscan</a>`
-          );
-        } else if (result.swapType === "rfq") {
-          setSwapStatus(
-            `RFQ swap submitted. Details: <pre>${JSON.stringify(
-              result,
-              null,
-              2
-            )}</pre>`
-          );
-        } else {
-          setSwapStatus(
-            `Swap failed: ${result.error || "Unknown error"} (code: ${
-              result.code
-            })`
-          );
-          break;
+        try {
+          const result = await swapTokenToUSDUC({
+            fromMint: token.mint,
+            amount: token.amount,
+            publicKey,
+            signTransaction,
+          });
+          if (result.status === "Success") {
+            swapped++;
+            results.push({
+              mint: token.mint,
+              uiAmount: token.uiAmount,
+              status: "success",
+              message: `Swap success! <a href=\"https://solscan.io/tx/${result.signature}\" target=\"_blank\" rel=\"noopener noreferrer\">View on Solscan</a>`,
+              signature: result.signature,
+            });
+          } else if (result.swapType === "rfq") {
+            results.push({
+              mint: token.mint,
+              uiAmount: token.uiAmount,
+              status: "skipped",
+              message: `RFQ swap submitted. Details: <pre>${JSON.stringify(
+                result,
+                null,
+                2
+              )}</pre>`,
+            });
+          } else {
+            results.push({
+              mint: token.mint,
+              uiAmount: token.uiAmount,
+              status: "failed",
+              message: `Swap failed: ${
+                result.error || "Unknown error"
+              } (code: ${result.code})`,
+            });
+          }
+        } catch (e) {
+          results.push({
+            mint: token.mint,
+            uiAmount: token.uiAmount,
+            status: "failed",
+            message: `Swap failed: ${(e as Error)?.message || "Unknown error"}`,
+          });
         }
       }
+      // Build summary HTML
+      let summaryHtml = `<div><b>Swap Summary:</b><ul style='margin:0;padding-left:1.2em;'>`;
+      for (const r of results) {
+        let color =
+          r.status === "success"
+            ? "#059669"
+            : r.status === "failed"
+            ? "#dc2626"
+            : "#f59e42";
+        summaryHtml += `<li style='margin-bottom:0.5em; color:${color}'>${
+          r.status === "success" ? "✅" : r.status === "failed" ? "❌" : "⚠️"
+        } <b>${r.uiAmount}</b> of <code>${r.mint.slice(0, 4)}...${r.mint.slice(
+          -4
+        )}</code>: ${r.message}</li>`;
+      }
+      summaryHtml += `</ul></div>`;
       if (swapped > 0) {
-        setSwapStatus("All selected tokens swapped to USDUC!");
+        summaryHtml += `<div style='margin-top:1em;'>All successful swaps have been completed! Your balances will refresh automatically.</div>`;
         await fetchBalancesAndPrices();
       } else {
-        setSwapStatus("No tokens swapped.");
+        summaryHtml += `<div style='margin-top:1em;'>No tokens were successfully swapped.</div>`;
       }
+      setSwapStatus(summaryHtml);
     } catch (e: unknown) {
-      console.log("[handleConvertAll] swap error:", e);
       setSwapStatus(
         "Swap failed: " + ((e as Error)?.message || "Unknown error")
       );

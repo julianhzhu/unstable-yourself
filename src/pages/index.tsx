@@ -318,7 +318,7 @@ export default function Home() {
         {/* Info & Links */}
         <div className="mt-3 flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs sm:text-sm text-blue-700 font-mono">
           <span className="bg-blue-100 px-2 py-1 rounded-full">
-            Fully Powered by Jupiter APIs
+            Fully Powered by Jupiter APIs, no RPCs
           </span>
           <a
             href="https://x.com/usducSOL"

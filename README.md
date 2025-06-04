@@ -1,40 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# Unstable Yourself
 
-## Getting Started
+<img src="/usduc-logo.png" alt="USDUC Logo" width="96" height="96" style="border-radius: 50%; margin-bottom: 1em;" />
 
-First, run the development server:
+**Convert all your Solana tokens to USDUC (the first ever unstable coin) in one click.**
+
+[Live Demo](https://unstable-me.vercel.app/) &nbsp;|&nbsp; [Check the code yourself](https://github.com/julianhzhu/unstable-me)
+
+---
+
+## 🚀 Features
+
+- 🔗 Connect your Solana wallet (Phantom, Solflare, etc)
+- 💸 Instantly batch swap all (or selected) tokens to USDUC
+- 🌀 Animated, "unstable" UI (wobbly logo, animated backgrounds, rotating taglines, and more)
+- 💰 See your wallet value in real time
+- 🪄 Modern, mobile-friendly design (Next.js + Tailwind + shadcn/ui)
+- 🌊 Powered by Jupiter APIs for swaps and prices
+- 🧑‍💻 100% open source — check the code yourself!
+
+---
+
+## 🛠️ Quick Start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 1. Clone the repo
+ git clone https://github.com/julianhzhu/unstable-me.git
+ cd unstable-me
+
+# 2. Install dependencies
+ npm install
+
+# 3. Run locally
+ npm run dev
+
+# 4. Open http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+## 🧩 Tech Stack
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+- [Next.js](https://nextjs.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [Solana Wallet Adapter](https://github.com/solana-labs/wallet-adapter)
+- [Jupiter API](https://station.jup.ag/docs)
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📜 License
 
-## Learn More
+MIT — but remember, this is unstable software for unstable people.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+## 🤪 About USDUC & Unstable Yourself
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Website: [usduc.xyz](https://usduc.xyz/)
+- Writings: [unstable.ink](https://unstable.ink/)
+- X: [@usducSOL](https://x.com/usducSOL)
+- Code: [Check the code yourself](https://github.com/julianhzhu/unstable-me)
 
-## Deploy on Vercel
+> "You can't get rich by holding stablecoins. Get rich or die trying. Will you be a millionaire or a hobo? High volatility! Made for unstable people."
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+**Stay unstable. Swap responsibly.**

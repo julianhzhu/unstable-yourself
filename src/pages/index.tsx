@@ -413,7 +413,7 @@ export default function Home() {
               Welcome to Unstable Yourself
             </h2>
             <p className="text-[#2D5EFF] text-lg mb-4 font-sans">
-              Swap all your tokens to USDUC in one click.
+              Swap all your tokens to USDUC simply.
             </p>
             <WalletButtonWrapper />
           </div>

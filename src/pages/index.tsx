@@ -596,19 +596,24 @@ export default function Home() {
                       const price = prices[mintAddr] || 0;
                       const value = price * (token.uiAmount || 0);
                       const meta = tokenMetas[mintAddr];
+                      const isUSDUC = meta && meta.symbol === "USDUC";
+                      const isSOL = meta && meta.symbol === "SOL";
                       return (
                         <li
                           key={token.mint}
                           className="flex items-center justify-between px-2 py-2 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/50 transition-all gap-2"
                         >
                           <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
-                            <input
-                              type="checkbox"
-                              checked={!!selected[token.mint]}
-                              onChange={() => handleSelect(token.mint)}
-                              disabled={swapping}
-                              className="w-5 h-5 accent-blue-600 dark:accent-blue-400 rounded-md border border-blue-200 dark:border-blue-700"
-                            />
+                            {/* Hide checkbox for USDUC and SOL */}
+                            {!(isUSDUC || isSOL) && (
+                              <input
+                                type="checkbox"
+                                checked={!!selected[token.mint]}
+                                onChange={() => handleSelect(token.mint)}
+                                disabled={swapping}
+                                className="w-5 h-5 accent-blue-600 dark:accent-blue-400 rounded-md border border-blue-200 dark:border-blue-700"
+                              />
+                            )}
                             {meta && meta.logoURI ? (
                               <img
                                 src={meta.logoURI}

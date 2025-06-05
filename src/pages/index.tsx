@@ -4,7 +4,7 @@ import axios from "axios";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { FiRefreshCw } from "react-icons/fi";
+import { FiRefreshCw, FiSun, FiMoon, FiCopy, FiCheck } from "react-icons/fi";
 
 // USDUC Mint
 const USDUC_MINT = "CB9dDufT3ZuQXqqSfa1c5kY935TEreyBw9XJXxHKpump";
@@ -193,6 +193,25 @@ export default function Home() {
     Record<string, TokenMeta | null>
   >({});
   const [taglineIdx, setTaglineIdx] = useState(0);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
+
+  useEffect(() => {
+    // Check system preference on mount
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches;
+    setIsDarkMode(prefersDark);
+  }, []);
+
+  useEffect(() => {
+    // Update body class when dark mode changes
+    if (isDarkMode) {
+      document.body.classList.add("dark");
+    } else {
+      document.body.classList.remove("dark");
+    }
+  }, [isDarkMode]);
 
   // Fetch balances and prices
   const fetchBalancesAndPrices = async () => {
@@ -417,19 +436,48 @@ export default function Home() {
     0
   );
 
+  // Helper to truncate wallet address
+  function truncateAddress(addr?: string) {
+    if (!addr) return "";
+    return addr.slice(0, 4) + "..." + addr.slice(-4);
+  }
+
+  // Copy wallet address to clipboard
+  const handleCopyAddress = async () => {
+    if (publicKey) {
+      await navigator.clipboard.writeText(publicKey.toBase58());
+      setCopyStatus("copied");
+      setTimeout(() => setCopyStatus("idle"), 1200);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center animated-unstable-bg">
       {/* App Header */}
-      <header className="w-full flex flex-col items-center py-6 mb-2 bg-white/80 shadow-sm sticky top-0 z-10">
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-blue-700 drop-shadow-sm">
-          Unstable Yourself
-        </h1>
-        <p className="text-xs sm:text-sm text-blue-400 mt-1 font-mono min-h-[1.5em] transition-all">
-          {UNSTABLE_TAGLINES[taglineIdx]}
-        </p>
+      <header className="w-full flex flex-col items-center py-6 mb-2 bg-white/80 dark:bg-black/80 shadow-sm sticky top-0 z-10 relative">
+        {/* Dark mode toggle at top right */}
+        <button
+          onClick={() => setIsDarkMode(!isDarkMode)}
+          className="absolute top-6 right-6 p-2 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
+          aria-label="Toggle dark mode"
+        >
+          {isDarkMode ? (
+            <FiSun className="w-5 h-5 text-blue-700 dark:text-blue-400" />
+          ) : (
+            <FiMoon className="w-5 h-5 text-blue-700 dark:text-blue-400" />
+          )}
+        </button>
+        <div className="w-full max-w-md flex flex-col items-center px-4">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-blue-700 dark:text-blue-400 drop-shadow-sm text-center">
+            Unstable Yourself
+          </h1>
+          <p className="text-xs sm:text-sm text-blue-400 dark:text-blue-300 mt-1 font-mono min-h-[1.5em] transition-all text-center">
+            {UNSTABLE_TAGLINES[taglineIdx]}
+          </p>
+        </div>
         {/* Info & Links */}
-        <div className="mt-3 flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs sm:text-sm text-blue-700 font-mono">
-          <span className="bg-blue-100 px-2 py-1 rounded-full">
+        <div className="mt-3 flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs sm:text-sm text-blue-700 dark:text-blue-300 font-mono">
+          <span className="bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded-full">
             Fully Powered by Jupiter APIs, no RPCs
           </span>
           <a
@@ -491,7 +539,7 @@ export default function Home() {
         {/* Show friendly welcome if not connected */}
         {!connected || !publicKey ? (
           <div
-            className="mt-16 w-full max-w-md bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-10 border border-blue-100 flex flex-col items-center gap-8 text-center"
+            className="mt-16 w-full max-w-md bg-white/80 dark:bg-black/80 backdrop-blur-md rounded-2xl shadow-xl p-10 border border-blue-100 dark:border-blue-900 flex flex-col items-center gap-8 text-center"
             style={{ boxShadow: "0 8px 40px 0 rgba(45,94,255,0.10)" }}
           >
             <Image
@@ -512,38 +560,53 @@ export default function Home() {
             <WalletButtonWrapper />
           </div>
         ) : (
-          <div className="mt-4 w-full max-w-md bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-blue-100 flex flex-col gap-2">
-            <div className="mb-2 flex items-center gap-2 font-mono text-xs sm:text-sm text-blue-700">
-              <span
-                className="truncate flex-1 min-w-0"
-                title={publicKey?.toBase58()}
-              >
-                Wallet: {publicKey?.toBase58()}
-              </span>
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing || loading}
-                aria-label="Refresh balances"
-                className="p-1 rounded-full hover:bg-blue-100 transition disabled:opacity-50 flex-shrink-0"
-              >
-                <FiRefreshCw
-                  className={`w-5 h-5 ${
-                    refreshing || loading ? "animate-spin" : ""
-                  } text-blue-500`}
-                />
-              </button>
+          <div className="mt-4 w-full max-w-md bg-white dark:bg-black rounded-2xl shadow-lg p-0 sm:p-0 border border-blue-100 dark:border-blue-900 flex flex-col items-center gap-0">
+            <div className="w-full px-6 pt-6 pb-2 flex flex-col items-center">
+              <div className="w-full flex flex-row items-center justify-center gap-2">
+                <span
+                  className="truncate w-full text-center font-mono text-xs sm:text-sm text-blue-700 dark:text-blue-300 mb-2 flex items-center justify-center gap-2 cursor-pointer hover:underline"
+                  title={publicKey?.toBase58()}
+                  style={{ wordBreak: "break-all" }}
+                  onClick={handleCopyAddress}
+                >
+                  Wallet: {truncateAddress(publicKey?.toBase58())}
+                  <span className="ml-1">
+                    {copyStatus === "copied" ? (
+                      <FiCheck className="inline w-4 h-4 text-green-500" />
+                    ) : (
+                      <FiCopy className="inline w-4 h-4 text-blue-400" />
+                    )}
+                  </span>
+                </span>
+                <button
+                  onClick={handleRefresh}
+                  disabled={refreshing || loading}
+                  aria-label="Refresh balances"
+                  className="p-1 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900 transition disabled:opacity-50 flex-shrink-0"
+                >
+                  <FiRefreshCw
+                    className={`w-5 h-5 ${
+                      refreshing || loading ? "animate-spin" : ""
+                    } text-blue-500 dark:text-blue-400`}
+                  />
+                </button>
+              </div>
             </div>
-            <div className="mb-4">
-              <h2 className="font-bold mb-2 text-blue-800 text-lg sm:text-xl">
+            <div className="w-full px-6 pb-6 flex flex-col items-center">
+              <h2 className="font-bold mb-2 text-blue-800 dark:text-blue-300 text-lg sm:text-xl text-center">
                 Token Balances
               </h2>
               {loading ? (
-                <div>Loading...</div>
+                <div className="text-blue-700 dark:text-blue-300">
+                  Loading...
+                </div>
               ) : (
                 <>
                   <ul className="space-y-2">
                     {paginatedTokens.length === 0 && (
-                      <li>No SPL tokens found.</li>
+                      <li className="text-blue-700 dark:text-blue-300">
+                        No SPL tokens found.
+                      </li>
                     )}
                     {paginatedTokens.map((token) => {
                       const mintAddr = getMintAddress(token.mint);
@@ -553,7 +616,7 @@ export default function Home() {
                       return (
                         <li
                           key={token.mint}
-                          className="flex items-center justify-between px-2 py-2 rounded-xl hover:bg-blue-50 transition-all gap-2"
+                          className="flex items-center justify-between px-2 py-2 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/50 transition-all gap-2"
                         >
                           <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
                             <input
@@ -561,7 +624,7 @@ export default function Home() {
                               checked={!!selected[token.mint]}
                               onChange={() => handleSelect(token.mint)}
                               disabled={swapping}
-                              className="w-5 h-5 accent-blue-600 rounded-md border border-blue-200"
+                              className="w-5 h-5 accent-blue-600 dark:accent-blue-400 rounded-md border border-blue-200 dark:border-blue-700"
                             />
                             {meta && meta.logoURI ? (
                               <img
@@ -569,19 +632,19 @@ export default function Home() {
                                 alt={meta.symbol || token.mint}
                                 width={28}
                                 height={28}
-                                className="w-7 h-7 rounded-full border border-gray-200 bg-white flex-shrink-0"
+                                className="w-7 h-7 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0"
                                 style={{ objectFit: "cover" }}
                               />
                             ) : (
-                              <div className="w-7 h-7 rounded-full bg-gray-200 flex-shrink-0" />
+                              <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
                             )}
                             <div className="flex flex-col min-w-0">
-                              <span className="text-sm font-semibold text-blue-900 truncate">
+                              <span className="text-sm font-semibold text-blue-900 dark:text-blue-100 truncate">
                                 {meta && meta.symbol
                                   ? meta.symbol
                                   : token.mint.slice(0, 4)}
                               </span>
-                              <span className="text-xs text-gray-500 truncate">
+                              <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
                                 {meta && meta.name
                                   ? meta.name
                                   : token.mint.slice(0, 4) +
@@ -589,11 +652,11 @@ export default function Home() {
                                     token.mint.slice(-4)}
                               </span>
                             </div>
-                            <span className="ml-2 text-xs text-gray-500 font-mono">
+                            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400 font-mono">
                               {token.uiAmount}
                             </span>
                           </label>
-                          <span className="text-xs sm:text-sm text-blue-700 font-bold ml-2 min-w-[60px] text-right">
+                          <span className="text-xs sm:text-sm text-blue-700 dark:text-blue-300 font-bold ml-2 min-w-[60px] text-right">
                             $
                             {value.toLocaleString(undefined, {
                               maximumFractionDigits: 2,
@@ -607,17 +670,17 @@ export default function Home() {
                   {totalPages > 1 && (
                     <div className="flex justify-center items-center gap-2 mt-4">
                       <button
-                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg disabled:opacity-50 text-xs sm:text-sm"
+                        className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg disabled:opacity-50 text-xs sm:text-sm"
                         onClick={() => setPage((p) => Math.max(0, p - 1))}
                         disabled={page === 0}
                       >
                         Prev
                       </button>
-                      <span className="text-xs sm:text-sm text-blue-700">
+                      <span className="text-xs sm:text-sm text-blue-700 dark:text-blue-300">
                         Page {page + 1} of {totalPages}
                       </span>
                       <button
-                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg disabled:opacity-50 text-xs sm:text-sm"
+                        className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg disabled:opacity-50 text-xs sm:text-sm"
                         onClick={() =>
                           setPage((p) => Math.min(totalPages - 1, p + 1))
                         }
@@ -631,12 +694,12 @@ export default function Home() {
               )}
             </div>
             {/* Selected tokens summary */}
-            <div className="mb-2 text-xs sm:text-sm text-blue-700 flex flex-wrap items-center gap-2 justify-between">
+            <div className="mb-2 text-xs sm:text-sm text-blue-700 dark:text-blue-300 flex flex-wrap items-center gap-2 justify-between">
               <span>
                 Selected: <span className="font-bold">{selectedCount}</span>{" "}
                 token{selectedCount !== 1 ? "s" : ""}
               </span>
-              <span className="font-bold text-blue-900">
+              <span className="font-bold text-blue-900 dark:text-blue-100">
                 $
                 {selectedTotalValue.toLocaleString(undefined, {
                   maximumFractionDigits: 2,
@@ -644,7 +707,7 @@ export default function Home() {
               </span>
             </div>
             <button
-              className="mt-2 w-full px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 font-semibold text-base shadow-lg transition-all"
+              className="mt-2 w-full px-4 py-3 bg-blue-600 dark:bg-blue-500 text-white rounded-xl shadow font-semibold text-base hover:bg-blue-700 dark:hover:bg-blue-600 transition-all focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={selectedCount === 0 || swapping}
               onClick={handleConvertAll}
             >
@@ -652,7 +715,7 @@ export default function Home() {
             </button>
             {swapStatus && (
               <div
-                className="mt-4 text-sm text-blue-800 bg-blue-50 rounded-xl p-3 shadow-inner"
+                className="mt-4 text-sm text-blue-800 dark:text-blue-200 bg-blue-50 dark:bg-blue-900/50 rounded-xl p-3 shadow-inner"
                 dangerouslySetInnerHTML={{ __html: swapStatus }}
               />
             )}
@@ -669,6 +732,14 @@ export default function Home() {
             #f6fbff 100%
           );
           animation: unstable-bg-move 12s ease-in-out infinite alternate;
+        }
+        .dark .animated-unstable-bg {
+          background: linear-gradient(
+            120deg,
+            #0a0a0a 0%,
+            #1a1a1a 50%,
+            #0a0a0a 100%
+          );
         }
         @keyframes unstable-bg-move {
           0% {

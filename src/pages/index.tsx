@@ -560,38 +560,21 @@ export default function Home() {
             <WalletButtonWrapper />
           </div>
         ) : (
-          <div className="mt-4 w-full max-w-md bg-white dark:bg-black rounded-2xl shadow-lg p-0 sm:p-0 border border-blue-100 dark:border-blue-900 flex flex-col items-center gap-0">
-            <div className="w-full px-6 pt-6 pb-2 flex flex-col items-center">
-              <div className="w-full flex flex-row items-center justify-center gap-2">
-                <span
-                  className="truncate w-full text-center font-mono text-xs sm:text-sm text-blue-700 dark:text-blue-300 mb-2 flex items-center justify-center gap-2 cursor-pointer hover:underline"
-                  title={publicKey?.toBase58()}
-                  style={{ wordBreak: "break-all" }}
-                  onClick={handleCopyAddress}
-                >
-                  Wallet: {truncateAddress(publicKey?.toBase58())}
-                  <span className="ml-1">
-                    {copyStatus === "copied" ? (
-                      <FiCheck className="inline w-4 h-4 text-green-500" />
-                    ) : (
-                      <FiCopy className="inline w-4 h-4 text-blue-400" />
-                    )}
-                  </span>
-                </span>
-                <button
-                  onClick={handleRefresh}
-                  disabled={refreshing || loading}
-                  aria-label="Refresh balances"
-                  className="p-1 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900 transition disabled:opacity-50 flex-shrink-0"
-                >
-                  <FiRefreshCw
-                    className={`w-5 h-5 ${
-                      refreshing || loading ? "animate-spin" : ""
-                    } text-blue-500 dark:text-blue-400`}
-                  />
-                </button>
-              </div>
-            </div>
+          <div className="mt-4 w-full max-w-md bg-white dark:bg-black rounded-2xl shadow-lg p-0 sm:p-0 border border-blue-100 dark:border-blue-900 flex flex-col items-center gap-0 relative">
+            {/* Refresh button at top right of card */}
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing || loading}
+              aria-label="Refresh balances"
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900 transition disabled:opacity-50 flex-shrink-0 z-10"
+            >
+              <FiRefreshCw
+                className={`w-5 h-5 ${
+                  refreshing || loading ? "animate-spin" : ""
+                } text-blue-500 dark:text-blue-400`}
+              />
+            </button>
+            <div className="w-full px-6 pt-6 pb-2 flex flex-col items-center"></div>
             <div className="w-full px-6 pb-6 flex flex-col items-center">
               <h2 className="font-bold mb-2 text-blue-800 dark:text-blue-300 text-lg sm:text-xl text-center">
                 Token Balances

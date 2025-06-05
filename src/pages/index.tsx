@@ -452,7 +452,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center animated-unstable-bg">
+    <div className="min-h-screen flex flex-col items-center justify-center animated-unstable-bg pb-8">
       {/* App Header */}
       <header className="w-full flex flex-col items-center py-6 mb-2 bg-white/80 dark:bg-black/80 shadow-sm sticky top-0 z-10 relative">
         {/* Dark mode toggle at top right */}

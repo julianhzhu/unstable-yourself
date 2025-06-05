@@ -179,6 +179,14 @@ async function swapTokenToUSDUC({
 
 const TOKENS_PER_PAGE = 10;
 
+// Utility to format numbers as K, M, B, etc.
+function formatCompactNumber(num: number, decimals = 2): string {
+  if (Math.abs(num) >= 1e9) return (num / 1e9).toFixed(decimals) + "B";
+  if (Math.abs(num) >= 1e6) return (num / 1e6).toFixed(decimals) + "M";
+  if (Math.abs(num) >= 1e3) return (num / 1e3).toFixed(decimals) + "K";
+  return num.toLocaleString(undefined, { maximumFractionDigits: decimals });
+}
+
 export default function Home() {
   const { publicKey, connected, signTransaction } = useWallet();
   const [tokens, setTokens] = useState<TokenInfo[]>([]);
@@ -195,6 +203,7 @@ export default function Home() {
   const [taglineIdx, setTaglineIdx] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
+  const [showTooltipIdx, setShowTooltipIdx] = useState<number | null>(null);
 
   useEffect(() => {
     // Check system preference on mount
@@ -591,7 +600,7 @@ export default function Home() {
                         No SPL tokens found.
                       </li>
                     )}
-                    {paginatedTokens.map((token) => {
+                    {paginatedTokens.map((token, idx) => {
                       const mintAddr = getMintAddress(token.mint);
                       const price = prices[mintAddr] || 0;
                       const value = price * (token.uiAmount || 0);
@@ -601,54 +610,65 @@ export default function Home() {
                       return (
                         <li
                           key={token.mint}
-                          className="flex items-center justify-between px-2 py-2 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/50 transition-all gap-2"
+                          className="grid grid-cols-[32px_32px_1fr_auto_auto] items-center px-2 py-2 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/50 transition-all gap-2 relative"
                         >
-                          <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
-                            {/* Hide checkbox for USDUC and SOL */}
-                            {!(isUSDUC || isSOL) && (
-                              <input
-                                type="checkbox"
-                                checked={!!selected[token.mint]}
-                                onChange={() => handleSelect(token.mint)}
-                                disabled={swapping}
-                                className="w-5 h-5 accent-blue-600 dark:accent-blue-400 rounded-md border border-blue-200 dark:border-blue-700"
-                              />
-                            )}
-                            {meta && meta.logoURI ? (
-                              <img
-                                src={meta.logoURI}
-                                alt={meta.symbol || token.mint}
-                                width={28}
-                                height={28}
-                                className="w-7 h-7 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0"
-                                style={{ objectFit: "cover" }}
-                              />
-                            ) : (
-                              <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
-                            )}
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-sm font-semibold text-blue-900 dark:text-blue-100 truncate">
-                                {meta && meta.symbol
-                                  ? meta.symbol
-                                  : token.mint.slice(0, 4)}
-                              </span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                {meta && meta.name
-                                  ? meta.name
-                                  : token.mint.slice(0, 4) +
-                                    "..." +
-                                    token.mint.slice(-4)}
-                              </span>
-                            </div>
-                            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400 font-mono">
-                              {token.uiAmount}
+                          {/* Checkbox column */}
+                          {isUSDUC || isSOL ? (
+                            <div />
+                          ) : (
+                            <input
+                              type="checkbox"
+                              checked={!!selected[token.mint]}
+                              onChange={() => handleSelect(token.mint)}
+                              disabled={swapping}
+                              className="w-5 h-5 accent-blue-600 dark:accent-blue-400 rounded-md border border-blue-200 dark:border-blue-700"
+                            />
+                          )}
+                          {/* Logo column */}
+                          {meta && meta.logoURI ? (
+                            <img
+                              src={meta.logoURI}
+                              alt={meta.symbol || token.mint}
+                              width={28}
+                              height={28}
+                              className="w-7 h-7 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0"
+                              style={{ objectFit: "cover" }}
+                            />
+                          ) : (
+                            <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
+                          )}
+                          {/* Symbol/name column */}
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-semibold text-blue-900 dark:text-blue-100 truncate">
+                              {meta && meta.symbol
+                                ? meta.symbol
+                                : token.mint.slice(0, 4)}
                             </span>
-                          </label>
-                          <span className="text-xs sm:text-sm text-blue-700 dark:text-blue-300 font-bold ml-2 min-w-[60px] text-right">
-                            $
-                            {value.toLocaleString(undefined, {
-                              maximumFractionDigits: 2,
+                            <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              {meta && meta.name
+                                ? meta.name
+                                : token.mint.slice(0, 4) +
+                                  "..." +
+                                  token.mint.slice(-4)}
+                            </span>
+                          </div>
+                          {/* Amount column */}
+                          <span
+                            className="ml-2 text-xs text-gray-500 dark:text-gray-400 font-mono text-right"
+                            title={token.uiAmount.toLocaleString(undefined, {
+                              maximumFractionDigits: 8,
                             })}
+                          >
+                            {formatCompactNumber(token.uiAmount, 2)}
+                          </span>
+                          {/* Value column */}
+                          <span
+                            className="text-xs sm:text-sm text-blue-700 dark:text-blue-300 font-bold ml-2 min-w-[60px] text-right"
+                            title={value.toLocaleString(undefined, {
+                              maximumFractionDigits: 8,
+                            })}
+                          >
+                            ${formatCompactNumber(value, 2)}
                           </span>
                         </li>
                       );

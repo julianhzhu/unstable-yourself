@@ -78,9 +78,9 @@ async function fetchTokenPrices(
   const url = `https://lite-api.jup.ag/price/v3?ids=${ids}`;
   const { data } = await axios.get(url);
   const prices: Record<string, number> = {};
-  for (const mint in data.data) {
-    if (data.data[mint] && data.data[mint].usdPrice != null) {
-      prices[mint] = parseFloat(data.data[mint].usdPrice);
+  for (const mint in data) {
+    if (data[mint] && data[mint].usdPrice != null) {
+      prices[mint] = parseFloat(data[mint].usdPrice);
     }
   }
   return prices;

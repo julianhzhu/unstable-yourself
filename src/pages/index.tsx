@@ -487,7 +487,7 @@ export default function Home() {
         {/* Info & Links */}
         <div className="mt-3 flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs sm:text-sm text-blue-700 dark:text-blue-300 font-mono">
           <span className="bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded-full">
-            Fully Powered by Jupiter APIs, no RPCs
+            Fully Powered by Jupiter APIs
           </span>
           <a
             href="https://x.com/usduc_coin"

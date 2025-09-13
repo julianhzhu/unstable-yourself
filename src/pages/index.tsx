@@ -75,12 +75,12 @@ async function fetchTokenPrices(
 ): Promise<Record<string, number>> {
   if (mintAddresses.length === 0) return {};
   const ids = mintAddresses.join(",");
-  const url = `https://lite-api.jup.ag/price/v2?ids=${ids}`;
+  const url = `https://lite-api.jup.ag/price/v3?ids=${ids}`;
   const { data } = await axios.get(url);
   const prices: Record<string, number> = {};
   for (const mint in data.data) {
-    if (data.data[mint] && data.data[mint].price != null) {
-      prices[mint] = parseFloat(data.data[mint].price);
+    if (data.data[mint] && data.data[mint].usdPrice != null) {
+      prices[mint] = parseFloat(data.data[mint].usdPrice);
     }
   }
   return prices;

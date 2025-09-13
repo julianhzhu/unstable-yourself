@@ -561,7 +561,7 @@ export default function Home() {
               priority
             />
             <h2 className="text-3xl font-extrabold text-blue-800 tracking-tight mb-2 font-sans">
-              Welcome to Unstable Yourself
+              Every Unstable Coin Counts
             </h2>
             <p className="text-[#2D5EFF] text-lg mb-4 font-sans">
               Swap all your tokens to USDUC simply.

@@ -490,7 +490,7 @@ export default function Home() {
             Fully Powered by Jupiter APIs, no RPCs
           </span>
           <a
-            href="https://x.com/usducSOL"
+            href="https://x.com/usduc_coin"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:underline text-blue-600 flex items-center gap-1"
@@ -506,7 +506,7 @@ export default function Home() {
             X
           </a>
           <a
-            href="https://usduc.xyz/"
+            href="https://usduc.org/"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:underline text-blue-600"
